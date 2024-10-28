@@ -39,7 +39,7 @@ public class CreateABCompare
         AssetDatabase.Refresh();
         Debug.Log("AB包对比文件生成成功");
     }
-    private static string GetMD5(string filePath)
+    public static string GetMD5(string filePath)
     {
         // 将文件以流的方式打开
         using (FileStream file = new FileStream(filePath, FileMode.Open))

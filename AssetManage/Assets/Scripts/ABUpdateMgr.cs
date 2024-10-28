@@ -51,8 +51,7 @@ public class ABUpdateMgr : MonoBehaviour
                 tempList.Remove(dowmLoadList[i]);
             }
         }
-
-        // 进度 是否结束
+        
     }
 
     private void OnDestroy()
