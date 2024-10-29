@@ -1,7 +1,10 @@
 ManifestFileVersion: 0
-CRC: 83444797
+CRC: 3782525932
 AssetBundleManifest:
   AssetBundleInfos:
     Info_0:
       Name: prefabs
+      Dependencies: {}
+    Info_1:
+      Name: hotupdate.dll
       Dependencies: {}

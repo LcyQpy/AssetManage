@@ -8,6 +8,7 @@ using UnityEngine;
 
 public class test : MonoBehaviour
 {
+    public GameObject Camera1;
     #region
     /**
      * 1.根据文件路径 ，获取文件的流信息
@@ -17,9 +18,12 @@ public class test : MonoBehaviour
     #endregion 
     private void Start()
     {
-        //string md5 = GetMD5(Application.dataPath + "/AssetBundle/Windows/prefabs");
-        ABUpdateMgr.Instance.DownLoadABCompareFile();
-        ABUpdateMgr.Instance.DownLoadABFile();
+        //ABUpdateMgr.Instance.DownLoadABCompareFile();
+        //ABUpdateMgr.Instance.DownLoadABFile();
+        AssetBundle ab =  AssetBundle.LoadFromFile(Application.dataPath + "/AssetBundle/Windows/prefabs");
+        GameObject obj = ab.LoadAsset("TestSphere") as GameObject;
+        obj.transform.SetParent(Camera1.transform);
+        Instantiate(obj);
     }
     private string GetMD5(string filePath)
     {

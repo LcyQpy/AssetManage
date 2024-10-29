@@ -8,8 +8,9 @@
 /[Bb]uild/
 /[Bb]uilds/
 /[Ll]ogs/
-/[Uu]ser[Ss]ettings/
-
+/[Uu]ser[Ss]ettings
+/[Hh]ot[Uu]pdate[Dd]ata
+/[Hh]ybrid[Cc][Ll][Rr][Dd]ata
 # MemoryCaptures can get excessive in size.
 # They also could contain extremely sensitive data
 /[Mm]emoryCaptures/
