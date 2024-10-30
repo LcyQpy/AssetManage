@@ -7,7 +7,7 @@ using UnityEngine.Events;
 public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
 {
     // 已加载的AB包
-    private Dictionary<string, AssetBundle> abDic  = new Dictionary<string, AssetBundle>();
+    private Dictionary<string, AssetBundleInfo> abDic  = new();
     private AssetBundle MianABundle = null;
     private AssetBundleManifest mianfest = null;
     private string PerUrl
@@ -51,14 +51,18 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
             if (!abDic.ContainsKey(ReferStr[i]))
             {
                 AssetBundle ab = AssetBundle.LoadFromFile(PerUrl + ReferStr[i]);
-                abDic.Add(ReferStr[i], ab);
+                abDic.Add(ReferStr[i], new AssetBundleInfo(ab));
             }
         }
         // 加载目标包 需要先加载依赖包
         if (!abDic.ContainsKey(abName))
         {
             AssetBundle tarAB = AssetBundle.LoadFromFile(PerUrl +abName);
-            abDic.Add(abName, tarAB);
+            abDic.Add(abName, new AssetBundleInfo(tarAB));
+        }
+        else
+        {
+            abDic[abName].m_ReferencedCount += 1;
         }
     }
 
@@ -72,8 +76,10 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     public Object LoadRes(string abName, string resName)
     {
         LoadAB(abName);
+        // 加载成功
+        abDic[abName].m_ReferencedCount += 1;
         // 加载目标资源
-        return abDic[abName].LoadAsset(resName);
+        return abDic[abName].m_assetBundle.LoadAsset(resName);
     }
     /// <summary>
     /// 同步加载在AB包资源 根据资源类型
@@ -86,7 +92,8 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
         LoadAB(abName);
         // 根据类型 加载目标资源
-        return abDic[abName].LoadAsset(resName, resType);
+        abDic[abName].m_ReferencedCount += 1;
+        return abDic[abName].m_assetBundle.LoadAsset(resName, resType);
     }
 
     /// <summary>
@@ -100,7 +107,8 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
         LoadAB(abName);
         // 根据类型 加载目标资源
-        return abDic[abName].LoadAsset<T>(resName);
+        abDic[abName].m_ReferencedCount += 1;
+        return abDic[abName].m_assetBundle.LoadAsset<T>(resName);
     }
     // 异步加载 public目的是给外部启动协程
     public void LoadResAsync(string abName, string resName, UnityAction<Object> callBack)
@@ -110,8 +118,9 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     private IEnumerator ReallyLoadResAsync(string abName, string resName, UnityAction<Object> callback)
     {
         LoadAB(abName);
+        abDic[abName].m_ReferencedCount += 1;
         // 加载目标资源
-        yield return abDic[abName].LoadAssetAsync(resName); ;
+        yield return abDic[abName].m_assetBundle.LoadAssetAsync(resName); ;
     }
     // Type
     public void LoadResAsync(string abName, string resName, System.Type type, UnityAction<Object> callBack)
@@ -122,7 +131,8 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
         LoadAB(abName);
         // 加载目标资源
-        yield return abDic[abName].LoadAssetAsync(resName, type); 
+        abDic[abName].m_ReferencedCount += 1;
+        yield return abDic[abName].m_assetBundle.LoadAssetAsync(resName, type); 
     }
     // T
     public void LoadResAsync<T>(string abName, string resName, UnityAction<Object> callBack) where T : Object
@@ -133,15 +143,16 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
         LoadAB(abName);
         // 加载目标资源
-        yield return abDic[abName].LoadAssetAsync<T>(resName); ;
+        abDic[abName].m_ReferencedCount += 1;
+        yield return abDic[abName].m_assetBundle.LoadAssetAsync<T>(resName); ;
     }
 
     // 单个包卸载
     public void UnLoad(string abName)
     {
-        if (abDic.ContainsKey(abName))
+        if (abDic.ContainsKey(abName) && abDic[abName].m_ReferencedCount == 1)
         {
-            abDic[abName].Unload(false);
+            abDic[abName].m_assetBundle.Unload(false);
             abDic.Remove(abName);
         }
     }
@@ -153,5 +164,16 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
         abDic.Clear();
         mianfest = null;
         MianABundle = null;
+    } 
+}
+
+public class AssetBundleInfo
+{
+    public AssetBundle m_assetBundle;
+    public int m_ReferencedCount;
+    public AssetBundleInfo(AssetBundle assetBundle)
+    {
+        m_assetBundle = assetBundle;
+        m_ReferencedCount = 1;
     }
 }
