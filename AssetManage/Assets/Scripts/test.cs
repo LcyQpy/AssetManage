@@ -20,10 +20,16 @@ public class test : MonoBehaviour
     {
         //ABUpdateMgr.Instance.DownLoadABCompareFile();
         //ABUpdateMgr.Instance.DownLoadABFile();
-        AssetBundle ab =  AssetBundle.LoadFromFile(Application.dataPath + "/AssetBundle/Windows/prefabs");
-        GameObject obj = ab.LoadAsset("TestSphere") as GameObject;
-        obj.transform.SetParent(Camera1.transform);
-        Instantiate(obj);
+
+        //AssetBundle ab =  AssetBundle.LoadFromFile(Application.dataPath + "/AssetBundle/Windows/prefabs");
+        //GameObject obj = ab.LoadAsset("TestSphere") as GameObject;
+        //obj.transform.SetParent(Camera1.transform);
+        //Instantiate(obj);
+        GameObject TestCube = AssetBundleManager.GetInstance().LoadRes("prefabs", "TestCube") as GameObject;
+        GameObject TestSphere =  AssetBundleManager.GetInstance().LoadRes("prefabs", "TestSphere") as GameObject;
+        TestCube.transform.position = -Vector3.up;
+        Instantiate(TestCube);
+        Instantiate(TestSphere);
     }
     private string GetMD5(string filePath)
     {
