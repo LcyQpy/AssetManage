@@ -1,6 +1,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -10,6 +11,10 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     private Dictionary<string, AssetBundleInfo> abDic  = new();
     private AssetBundle MianABundle = null;
     private AssetBundleManifest mianfest = null;
+
+    public Dictionary<string, AssetBundleInfo> dicGet() { 
+        return abDic;
+    }
     private string PerUrl
     {
         get
@@ -47,22 +52,19 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
         string[] ReferStr = mianfest.GetDirectDependencies(abName);
         for (int i = 0; i < ReferStr.Length; i++)
         {
-            // 判断包是否被加载
+            // 判断依赖包是否被加载
             if (!abDic.ContainsKey(ReferStr[i]))
             {
                 AssetBundle ab = AssetBundle.LoadFromFile(PerUrl + ReferStr[i]);
                 abDic.Add(ReferStr[i], new AssetBundleInfo(ab));
             }
+            abDic[ReferStr[i]].m_referAssetBuble.Add(abName);
         }
         // 加载目标包 需要先加载依赖包
-        if (!abDic.ContainsKey(abName))
+        if (!abDic.ContainsKey(abName)) // 没被加载
         {
             AssetBundle tarAB = AssetBundle.LoadFromFile(PerUrl +abName);
             abDic.Add(abName, new AssetBundleInfo(tarAB));
-        }
-        else
-        {
-            abDic[abName].m_ReferencedCount += 1;
         }
     }
 
@@ -77,7 +79,8 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
         LoadAB(abName);
         // 加载成功
-        abDic[abName].m_ReferencedCount += 1;
+        var obj = abDic[abName].m_assetBundle.LoadAsset(resName);
+        //abDic[abName].m_obj.Add(obj as Object);
         // 加载目标资源
         return abDic[abName].m_assetBundle.LoadAsset(resName);
     }
@@ -92,7 +95,8 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
         LoadAB(abName);
         // 根据类型 加载目标资源
-        abDic[abName].m_ReferencedCount += 1;
+        var obj = abDic[abName].m_assetBundle.LoadAsset(resName, resType);
+        abDic[abName].m_obj.Add(obj);
         return abDic[abName].m_assetBundle.LoadAsset(resName, resType);
     }
 
@@ -107,7 +111,8 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
         LoadAB(abName);
         // 根据类型 加载目标资源
-        abDic[abName].m_ReferencedCount += 1;
+        var obj = abDic[abName].m_assetBundle.LoadAsset<T>(resName);
+        abDic[abName].m_obj.Add(obj);
         return abDic[abName].m_assetBundle.LoadAsset<T>(resName);
     }
     // 异步加载 public目的是给外部启动协程
@@ -115,44 +120,59 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
     {
       StartCoroutine(ReallyLoadResAsync(abName, resName, callBack));
     }
-    private IEnumerator ReallyLoadResAsync(string abName, string resName, UnityAction<Object> callback)
+    private IEnumerator ReallyLoadResAsync(string abName, string resName, UnityAction<Object> callBack)
     {
-        LoadAB(abName);
-        abDic[abName].m_ReferencedCount += 1;
-        // 加载目标资源
-        yield return abDic[abName].m_assetBundle.LoadAssetAsync(resName); ;
+        LoadAB(abName);  // 加载依赖包
+        AssetBundleRequest request = abDic[abName].m_assetBundle.LoadAssetAsync(resName);
+        yield return request;
+        abDic[abName].m_obj.Add(request.asset as Object);
+        callBack(request.asset);
     }
     // Type
     public void LoadResAsync(string abName, string resName, System.Type type, UnityAction<Object> callBack)
     {
         StartCoroutine(ReallyLoadResAsync(abName, resName,type, callBack));
     }
-    private IEnumerator ReallyLoadResAsync(string abName, string resName, System.Type type, UnityAction<Object> callback)
+    private IEnumerator ReallyLoadResAsync(string abName, string resName, System.Type type, UnityAction<Object> callBack)
     {
-        LoadAB(abName);
-        // 加载目标资源
-        abDic[abName].m_ReferencedCount += 1;
-        yield return abDic[abName].m_assetBundle.LoadAssetAsync(resName, type); 
+        LoadAB(abName);  // 加载依赖包
+        AssetBundleRequest request = abDic[abName].m_assetBundle.LoadAssetAsync(resName, type);
+        yield return request;
+        abDic[abName].m_obj.Add(request.asset as Object);
+        callBack(request.asset);
     }
     // T
     public void LoadResAsync<T>(string abName, string resName, UnityAction<Object> callBack) where T : Object
     {
         StartCoroutine(ReallyLoadResAsync<T>(abName, resName, callBack));
     }
-    private IEnumerator ReallyLoadResAsync<T>(string abName, string resName, UnityAction<Object> callback)
+    private IEnumerator ReallyLoadResAsync<T>(string abName, string resName, UnityAction<Object> callBack) where T : Object
     {
-        LoadAB(abName);
-        // 加载目标资源
-        abDic[abName].m_ReferencedCount += 1;
-        yield return abDic[abName].m_assetBundle.LoadAssetAsync<T>(resName); ;
+        LoadAB(abName);  // 加载依赖包
+        AssetBundleRequest request = abDic[abName].m_assetBundle.LoadAssetAsync<T>(resName);
+        yield return request;
+        abDic[abName].m_obj.Add(request.asset as Object);
+        callBack(request.asset);
     }
 
     // 单个包卸载
     public void UnLoad(string abName)
     {
-        if (abDic.ContainsKey(abName) && abDic[abName].m_ReferencedCount == 1)
+        var m_list = abDic[abName];
+        // obj
+        foreach (Object obj in m_list.m_obj)
         {
-            abDic[abName].m_assetBundle.Unload(false);
+            if (obj) return;
+            abDic[abName].m_obj.Remove(obj);
+        }
+        foreach (string str in m_list.m_referAssetBuble)
+        {
+            if (abDic.ContainsKey(str)) return;
+            abDic[abName].m_referAssetBuble.Remove(str);
+        }
+        if (!m_list.m_obj.Any() && !m_list.m_referAssetBuble.Any())
+        {
+            m_list.m_assetBundle.Unload(false);
             abDic.Remove(abName);
         }
     }
@@ -169,11 +189,11 @@ public class AssetBundleManager : SingleAutoMono<AssetBundleManager>
 
 public class AssetBundleInfo
 {
-    public AssetBundle m_assetBundle;
-    public int m_ReferencedCount;
+    public AssetBundle m_assetBundle; // 当前包
+    public List<Object> m_obj = new();  // 加载对象
+    public List<string> m_referAssetBuble = new(); // 被引用
     public AssetBundleInfo(AssetBundle assetBundle)
     {
         m_assetBundle = assetBundle;
-        m_ReferencedCount = 1;
     }
 }

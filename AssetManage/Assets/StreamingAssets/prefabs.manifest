@@ -1,15 +1,15 @@
 ManifestFileVersion: 0
-CRC: 2858367680
+CRC: 2984940544
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 20b9d9045e38a973c2b8b264faafc9f7
+    Hash: 2b79b04493363bbd0d071aad6428c89c
   TypeTreeHash:
     serializedVersion: 2
     Hash: 97834ab633b24cc6ced70a0255898c53
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: 20b9d9045e38a973c2b8b264faafc9f7
+    Hash: 2b79b04493363bbd0d071aad6428c89c
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -41,4 +41,5 @@ Assets:
 - Assets/Prefabs/TestSphere.prefab
 - Assets/Prefabs/TestCube.prefab
 - Assets/Prefabs/TestCapsule.prefab
-Dependencies: []
+Dependencies:
+- F:/AssetManage/AssetManage/HotUpdateData/Windows/material
